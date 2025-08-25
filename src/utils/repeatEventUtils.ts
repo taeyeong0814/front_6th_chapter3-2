@@ -9,7 +9,22 @@ export function generateRepeatEvents(baseEvent: Event): Event[] {
   if (baseEvent.repeat.type === 'none') {
     return [baseEvent];
   } else {
-    // 반복 일정 일 때 생성 로직이 필요함.
-    return [];
+    // 반복 일정 생성 로직
+    const events = [baseEvent];
+
+    if (baseEvent.repeat.type === 'daily' && baseEvent.repeat.endDate) {
+      const endDate = new Date(baseEvent.repeat.endDate);
+      const nextDate = new Date(baseEvent.date);
+      nextDate.setDate(nextDate.getDate() + baseEvent.repeat.interval);
+
+      if (nextDate <= endDate) {
+        events.push({
+          ...baseEvent,
+          date: nextDate.toISOString().split('T')[0],
+        });
+      }
+    }
+
+    return events;
   }
 }
