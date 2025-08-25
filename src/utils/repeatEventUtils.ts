@@ -6,6 +6,10 @@ import { Event } from '../types';
  * @returns 생성된 반복 일정들의 배열
  */
 export function generateRepeatEvents(baseEvent: Event): Event[] {
-  console.log('Processing event:', baseEvent.id);
-  return [];
+  if (baseEvent.repeat.type === 'none') {
+    return [baseEvent];
+  } else {
+    // 반복 일정 일 때 생성 로직이 필요함.
+    return [];
+  }
 }
