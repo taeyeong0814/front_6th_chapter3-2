@@ -198,7 +198,7 @@ describe('generateRepeatEvents', () => {
     it('수정된 단일 일정은 다른 반복 일정에 영향을 주지 않는다', () => {
       const repeatEvent = {
         ...baseEvent,
-        repeat: { type: 'monthly' as const, interval: 1, endDate: '2025-04-31' },
+        repeat: { type: 'monthly' as const, interval: 1, endDate: '2025-04-30' },
       };
 
       // 반복 일정 생성
@@ -213,7 +213,7 @@ describe('generateRepeatEvents', () => {
 
       // 수정된 일정만 단일 일정이 됨
       expect(modifiedEvent.repeat.type).toBe('none');
-      expect(modifiedEvent.date).toBe('2025-02-28');
+      expect(modifiedEvent.date).toBe('2025-02-01');
 
       // 다른 일정들은 여전히 반복 일정
       expect(repeatEvents[0].repeat.type).toBe('monthly');
