@@ -64,44 +64,112 @@ describe('반복 일정 통합 테스트', () => {
     server.resetHandlers();
   });
 
-  // 1단계: 기본 일정 생성 테스트 (반복 없이)
-  it('기본 일정을 생성하면 일정 목록에 표시된다', async () => {
+  // 1단계: 매일 반복 일정 생성 통합 테스트 (단위 테스트 기준)
+  it('매일 반복 일정을 생성하면 5일간의 일정이 생성된다', async () => {
     setupMockHandlerCreation();
 
     const { user } = setup(<App />);
 
-    await saveSchedule(user, {
-      title: '테스트 회의',
-      date: '2025-01-01',
-      startTime: '09:00',
-      endTime: '10:00',
-      description: '테스트 회의입니다',
-      location: '회의실 A',
-      category: '업무',
-    });
-
-    const eventList = within(screen.getByTestId('event-list'));
-    expect(eventList.getByText('테스트 회의')).toBeInTheDocument();
-    expect(eventList.getByText('2025-01-01')).toBeInTheDocument();
-    expect(eventList.getByText('09:00 - 10:00')).toBeInTheDocument();
-    expect(eventList.getByText('테스트 회의입니다')).toBeInTheDocument();
-    expect(eventList.getByText('회의실 A')).toBeInTheDocument();
-    expect(eventList.getByText('카테고리: 업무')).toBeInTheDocument();
-  });
-
-  // 2단계: 반복 체크박스 활성화 테스트
-  it('반복 체크박스를 클릭하면 반복 설정 UI가 나타난다', async () => {
-    const { user } = setup(<App />);
-
-    // 일정 추가 버튼 클릭
+    // 1. 일정 추가 버튼 클릭
     await user.click(screen.getAllByText('일정 추가')[0]);
 
-    // 반복 체크박스 클릭
+    // 2. 기본 정보 입력
+    await user.type(screen.getByLabelText('제목'), '매일 회의');
+    await user.type(screen.getByLabelText('날짜'), '2025-01-01');
+    await user.type(screen.getByLabelText('시작 시간'), '09:00');
+    await user.type(screen.getByLabelText('종료 시간'), '10:00');
+    await user.type(screen.getByLabelText('설명'), '매일 진행되는 회의');
+    await user.type(screen.getByLabelText('위치'), '회의실 A');
+
+    // 3. 카테고리 선택
+    await user.click(screen.getByLabelText('카테고리'));
+    await user.click(within(screen.getByLabelText('카테고리')).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: '업무-option' }));
+
+    // 4. 반복 설정
     await user.click(screen.getByLabelText('반복 일정'));
 
-    // 반복 설정 UI가 나타나는지 확인
-    expect(screen.getByText('반복 유형')).toBeInTheDocument();
-    expect(screen.getByText('반복 간격')).toBeInTheDocument();
-    expect(screen.getByText('반복 종료일')).toBeInTheDocument();
+    // 5. 반복 설정 UI가 나타날 때까지 기다림
+    await screen.findByText('반복 유형');
+
+    // 6. 반복 유형 선택 (매일)
+    await user.click(screen.getByText('반복 유형').closest('div')!.querySelector('div')!);
+    await user.click(screen.getByRole('option', { name: '매일' }));
+
+    // 7. 반복 간격 입력
+    await user.clear(screen.getByLabelText('반복 간격'));
+    await user.type(screen.getByLabelText('반복 간격'), '1');
+
+    // 8. 종료일 입력
+    await user.type(screen.getByLabelText('반복 종료일'), '2025-01-05');
+
+    // 9. 저장
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    // 10. 결과 확인 - 5개의 일정이 생성되어야 함
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(eventList.getByText('매일 회의')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-01')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-02')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-03')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-04')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-05')).toBeInTheDocument();
+
+    // 11. 반복 아이콘도 표시되어야 함
+    expect(eventList.getByText('🔄')).toBeInTheDocument();
+  });
+
+  // 2단계: 매주 반복 일정 생성 통합 테스트
+  it('매주 반복 일정을 생성하면 같은 요일에 일정이 생성된다', async () => {
+    setupMockHandlerCreation();
+
+    const { user } = setup(<App />);
+
+    // 1. 일정 추가 버튼 클릭
+    await user.click(screen.getAllByText('일정 추가')[0]);
+
+    // 2. 기본 정보 입력
+    await user.type(screen.getByLabelText('제목'), '주간 회의');
+    await user.type(screen.getByLabelText('날짜'), '2025-01-01'); // 수요일
+    await user.type(screen.getByLabelText('시작 시간'), '09:00');
+    await user.type(screen.getByLabelText('종료 시간'), '10:00');
+    await user.type(screen.getByLabelText('설명'), '주간 진행되는 회의');
+    await user.type(screen.getByLabelText('위치'), '회의실 A');
+
+    // 3. 카테고리 선택
+    await user.click(screen.getByLabelText('카테고리'));
+    await user.click(within(screen.getByLabelText('카테고리')).getByRole('combobox'));
+    await user.click(screen.getByRole('option', { name: '업무-option' }));
+
+    // 4. 반복 설정
+    await user.click(screen.getByLabelText('반복 일정'));
+
+    // 5. 반복 설정 UI가 나타날 때까지 기다림
+    await screen.findByText('반복 유형');
+
+    // 6. 반복 유형 선택 (매주)
+    await user.click(screen.getByText('반복 유형').closest('div')!.querySelector('div')!);
+    await user.click(screen.getByRole('option', { name: '매주' }));
+
+    // 7. 반복 간격 입력
+    await user.clear(screen.getByLabelText('반복 간격'));
+    await user.type(screen.getByLabelText('반복 간격'), '1');
+
+    // 8. 종료일 입력
+    await user.type(screen.getByLabelText('반복 종료일'), '2025-01-22');
+
+    // 9. 저장
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    // 10. 결과 확인 - 4개의 일정이 생성되어야 함 (수요일마다)
+    const eventList = within(screen.getByTestId('event-list'));
+    expect(eventList.getByText('주간 회의')).toBeInTheDocument();
+    expect(eventList.getByText('2025-01-01')).toBeInTheDocument(); // 수요일
+    expect(eventList.getByText('2025-01-08')).toBeInTheDocument(); // 수요일
+    expect(eventList.getByText('2025-01-15')).toBeInTheDocument(); // 수요일
+    expect(eventList.getByText('2025-01-22')).toBeInTheDocument(); // 수요일
+
+    // 11. 반복 아이콘도 표시되어야 함
+    expect(eventList.getByText('📋')).toBeInTheDocument();
   });
 });
