@@ -170,6 +170,56 @@ describe('generateRepeatEvents', () => {
       expect(modifiedEvent.repeat.type).toBe('none');
       expect(modifiedEvent.date).toBe('2025-01-03');
     });
+
+    it('반복 일정 수정 시 아이콘이 사라진다', () => {
+      const repeatEvent = {
+        ...baseEvent,
+        repeat: { type: 'weekly' as const, interval: 1, endDate: '2025-01-22' },
+      };
+
+      // 반복 일정 생성
+      const repeatEvents = generateRepeatEvents(repeatEvent);
+      expect(repeatEvents).toHaveLength(4);
+
+      // 원본 반복 일정은 아이콘이 있음
+      expect(repeatEvents[0].repeat.type).toBe('weekly');
+
+      // 특정 일정을 단일 일정으로 수정
+      const modifiedEvent = {
+        ...repeatEvents[1], // 2025-01-08 일정
+        repeat: { type: 'none' as const, interval: 1 },
+      };
+
+      // 수정된 일정은 아이콘이 없음
+      expect(modifiedEvent.repeat.type).toBe('none');
+      expect(modifiedEvent.date).toBe('2025-01-08');
+    });
+
+    it('수정된 단일 일정은 다른 반복 일정에 영향을 주지 않는다', () => {
+      const repeatEvent = {
+        ...baseEvent,
+        repeat: { type: 'monthly' as const, interval: 1, endDate: '2025-04-31' },
+      };
+
+      // 반복 일정 생성
+      const repeatEvents = generateRepeatEvents(repeatEvent);
+      expect(repeatEvents).toHaveLength(4);
+
+      // 중간 일정을 단일 일정으로 수정
+      const modifiedEvent = {
+        ...repeatEvents[1], // 2025-02-28 일정
+        repeat: { type: 'none' as const, interval: 1 },
+      };
+
+      // 수정된 일정만 단일 일정이 됨
+      expect(modifiedEvent.repeat.type).toBe('none');
+      expect(modifiedEvent.date).toBe('2025-02-28');
+
+      // 다른 일정들은 여전히 반복 일정
+      expect(repeatEvents[0].repeat.type).toBe('monthly');
+      expect(repeatEvents[2].repeat.type).toBe('monthly');
+      expect(repeatEvents[3].repeat.type).toBe('monthly');
+    });
   });
 
   // 5. (필수) 반복 일정 단일 삭제
