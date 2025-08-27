@@ -10,11 +10,11 @@ export function getRepeatIcon(event: Event): string {
     case 'daily':
       return '🔄';
     case 'weekly':
-      return '📅';
+      return '📋'; // 주간 체크리스트
     case 'monthly':
-      return '📆';
+      return '📊'; // 월간 차트
     case 'yearly':
-      return '🗓️';
+      return '🎯'; // 연간 목표
     default:
       return '';
   }
