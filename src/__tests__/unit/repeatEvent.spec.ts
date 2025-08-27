@@ -100,19 +100,6 @@ describe('generateRepeatEvents', () => {
 
   // 3. (필수) 반복 종료
   describe('반복 종료', () => {
-    it('endDate가 있는 경우 해당 날짜까지만 생성한다', () => {
-      const event = {
-        ...baseEvent,
-        repeat: { type: 'daily' as const, interval: 1, endDate: '2025-01-05' },
-      };
-
-      const result = generateRepeatEvents(event);
-
-      expect(result).toHaveLength(5);
-      expect(result[0].date).toBe('2025-01-01');
-      expect(result[4].date).toBe('2025-01-05');
-    });
-
     it('endDate가 없는 경우 기본 제한(2025-10-30)까지 생성한다', () => {
       const event = {
         ...baseEvent,
@@ -130,6 +117,34 @@ describe('generateRepeatEvents', () => {
       expect(new Date(lastEvent.date).getTime()).toBeLessThanOrEqual(
         new Date('2025-10-30').getTime()
       );
+    });
+
+    it('사용자 설정 종료일이 2025-10-30보다 늦으면 기본 제한을 적용한다', () => {
+      const event = {
+        ...baseEvent,
+        repeat: { type: 'daily' as const, interval: 1, endDate: '2025-12-31' }, // 기본 제한보다 늦음
+      };
+
+      const result = generateRepeatEvents(event);
+
+      // 2025-10-30까지만 생성되어야 함
+      const lastEvent = result[result.length - 1];
+      expect(new Date(lastEvent.date).getTime()).toBeLessThanOrEqual(
+        new Date('2025-10-30').getTime()
+      );
+    });
+
+    it('사용자 설정 종료일이 2025-10-30보다 이르면 사용자 설정을 적용한다', () => {
+      const event = {
+        ...baseEvent,
+        repeat: { type: 'daily' as const, interval: 1, endDate: '2025-01-03' }, // 기본 제한보다 이름
+      };
+
+      const result = generateRepeatEvents(event);
+
+      expect(result).toHaveLength(3);
+      expect(result[0].date).toBe('2025-01-01');
+      expect(result[2].date).toBe('2025-01-03');
     });
   });
 
