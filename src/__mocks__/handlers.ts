@@ -36,4 +36,55 @@ export const handlers = [
 
     return new HttpResponse(null, { status: 404 });
   }),
+
+  // 반복 일정 일괄 처리
+  http.post('/api/events-list', async ({ request }) => {
+    const { events: newEvents } = (await request.json()) as { events: Event[] };
+    const repeatId = String(Date.now());
+
+    const processedEvents = newEvents.map((event, index) => {
+      const isRepeatEvent = event.repeat.type !== 'none';
+      return {
+        ...event,
+        id: String(events.length + index + 1),
+        repeat: {
+          ...event.repeat,
+          id: isRepeatEvent ? repeatId : undefined,
+        },
+      };
+    });
+
+    // 실제로 events 배열에 추가
+    events.push(...processedEvents);
+    return HttpResponse.json(processedEvents, { status: 201 });
+  }),
+
+  http.put('/api/events-list', async ({ request }) => {
+    const { events: updatedEvents } = (await request.json()) as { events: Event[] };
+
+    // 실제로 events 배열을 업데이트
+    updatedEvents.forEach((updatedEvent) => {
+      const index = events.findIndex((event) => event.id === updatedEvent.id);
+      if (index !== -1) {
+        events[index] = { ...events[index], ...updatedEvent };
+      }
+    });
+
+    return HttpResponse.json(updatedEvents);
+  }),
+
+  http.delete('/api/events-list', async ({ request }) => {
+    const { eventIds } = (await request.json()) as { eventIds: string[] };
+
+    // 실제로 events 배열에서 해당 ID들을 제거
+    const initialLength = events.length;
+    for (let i = events.length - 1; i >= 0; i--) {
+      if (eventIds.includes(events[i].id)) {
+        events.splice(i, 1);
+      }
+    }
+
+    console.log(`Deleted ${initialLength - events.length} events`);
+    return new HttpResponse(null, { status: 204 });
+  }),
 ];

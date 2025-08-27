@@ -69,6 +69,74 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     }
   };
 
+  const saveRepeatEvents = async (repeatEvents: Event[]) => {
+    try {
+      const response = await fetch('/api/events-list', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: repeatEvents }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save repeat events');
+      }
+
+      await fetchEvents();
+      onSave?.();
+      enqueueSnackbar(`${repeatEvents.length}개의 반복 일정이 추가되었습니다.`, {
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('Error saving repeat events:', error);
+      enqueueSnackbar('반복 일정 저장 실패', { variant: 'error' });
+    }
+  };
+
+  const updateRepeatEvents = async (repeatEvents: Event[]) => {
+    try {
+      const response = await fetch('/api/events-list', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: repeatEvents }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update repeat events');
+      }
+
+      await fetchEvents();
+      onSave?.();
+      enqueueSnackbar(`${repeatEvents.length}개의 반복 일정이 수정되었습니다.`, {
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('Error updating repeat events:', error);
+      enqueueSnackbar('반복 일정 수정 실패', { variant: 'error' });
+    }
+  };
+
+  const deleteRepeatEvents = async (eventIds: string[]) => {
+    try {
+      const response = await fetch('/api/events-list', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete repeat events');
+      }
+
+      await fetchEvents();
+      enqueueSnackbar(`${eventIds.length}개의 반복 일정이 삭제되었습니다.`, {
+        variant: 'info',
+      });
+    } catch (error) {
+      console.error('Error deleting repeat events:', error);
+      enqueueSnackbar('반복 일정 삭제 실패', { variant: 'error' });
+    }
+  };
+
   async function init() {
     await fetchEvents();
     enqueueSnackbar('일정 로딩 완료!', { variant: 'info' });
@@ -79,5 +147,13 @@ export const useEventOperations = (editing: boolean, onSave?: () => void) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { events, fetchEvents, saveEvent, deleteEvent };
+  return {
+    events,
+    fetchEvents,
+    saveEvent,
+    deleteEvent,
+    saveRepeatEvents,
+    updateRepeatEvents,
+    deleteRepeatEvents,
+  };
 };

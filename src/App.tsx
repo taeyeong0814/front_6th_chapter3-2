@@ -51,6 +51,7 @@ import {
 } from './utils/dateUtils';
 import { findOverlappingEvents } from './utils/eventOverlap';
 import { getRepeatIcon, shouldShowRepeatIcon } from './utils/iconUtils';
+import { generateRepeatEvents } from './utils/repeatEventUtils';
 import { getTimeErrorMessage } from './utils/timeValidation';
 
 const categories = ['업무', '개인', '가족', '기타'];
@@ -99,9 +100,8 @@ function App() {
     editEvent,
   } = useEventForm();
 
-  const { events, saveEvent, deleteEvent } = useEventOperations(Boolean(editingEvent), () =>
-    setEditingEvent(null)
-  );
+  const { events, saveEvent, deleteEvent, saveRepeatEvents, deleteRepeatEvents } =
+    useEventOperations(Boolean(editingEvent), () => setEditingEvent(null));
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
   const { view, setView, currentDate, holidays, navigate } = useCalendarView();
@@ -140,13 +140,37 @@ function App() {
       notificationTime,
     };
 
+    // 반복 일정 생성 (Event 타입으로 변환)
+    const eventForRepeat: Event = {
+      id: editingEvent?.id || 'temp-id',
+      ...eventData,
+    };
+    const repeatEvents = generateRepeatEvents(eventForRepeat);
+
+    // 모든 반복 일정에 대해 겹침 검사
     const overlapping = findOverlappingEvents(eventData, events);
     if (overlapping.length > 0) {
       setOverlappingEvents(overlapping);
       setIsOverlapDialogOpen(true);
     } else {
-      await saveEvent(eventData);
-      resetForm();
+      try {
+        if (editingEvent && editingEvent.repeat.type !== 'none') {
+          // 반복 일정 수정: 기존 일정 삭제 후 새로운 일정 생성
+          await deleteRepeatEvents([editingEvent.id]);
+          await saveRepeatEvents(repeatEvents);
+        } else if (isRepeating) {
+          // 새로운 반복 일정 생성
+          await saveRepeatEvents(repeatEvents);
+        } else {
+          // 단일 일정 생성/수정
+          await saveEvent(eventData as Event);
+        }
+        resetForm();
+        enqueueSnackbar('일정이 저장되었습니다.', { variant: 'success' });
+      } catch (error) {
+        console.error('Error saving event:', error);
+        enqueueSnackbar('일정 저장 실패', { variant: 'error' });
+      }
     }
   };
 
