@@ -50,6 +50,7 @@ import {
   getWeeksAtMonth,
 } from './utils/dateUtils';
 import { findOverlappingEvents } from './utils/eventOverlap';
+import { getRepeatIcon, shouldShowRepeatIcon } from './utils/iconUtils';
 import { getTimeErrorMessage } from './utils/timeValidation';
 
 const categories = ['업무', '개인', '가족', '기타'];
@@ -205,6 +206,7 @@ function App() {
                           >
                             <Stack direction="row" spacing={1} alignItems="center">
                               {isNotified && <Notifications fontSize="small" />}
+                              {shouldShowRepeatIcon(event) && <span>{getRepeatIcon(event)}</span>}
                               <Typography
                                 variant="caption"
                                 noWrap
@@ -292,6 +294,9 @@ function App() {
                                 >
                                   <Stack direction="row" spacing={1} alignItems="center">
                                     {isNotified && <Notifications fontSize="small" />}
+                                    {shouldShowRepeatIcon(event) && (
+                                      <span>{getRepeatIcon(event)}</span>
+                                    )}
                                     <Typography
                                       variant="caption"
                                       noWrap
@@ -545,6 +550,7 @@ function App() {
                   <Stack>
                     <Stack direction="row" spacing={1} alignItems="center">
                       {notifiedEvents.includes(event.id) && <Notifications color="error" />}
+                      {shouldShowRepeatIcon(event) && <span>{getRepeatIcon(event)}</span>}
                       <Typography
                         fontWeight={notifiedEvents.includes(event.id) ? 'bold' : 'normal'}
                         color={notifiedEvents.includes(event.id) ? 'error' : 'inherit'}
