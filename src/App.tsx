@@ -100,8 +100,10 @@ function App() {
     editEvent,
   } = useEventForm();
 
-  const { events, saveEvent, deleteEvent, saveRepeatEvents, deleteRepeatEvents } =
-    useEventOperations(Boolean(editingEvent), () => setEditingEvent(null));
+  const { events, saveEvent, deleteEvent, saveRepeatEvents } = useEventOperations(
+    Boolean(editingEvent),
+    () => setEditingEvent(null)
+  );
 
   const { notifications, notifiedEvents, setNotifications } = useNotifications(events);
   const { view, setView, currentDate, holidays, navigate } = useCalendarView();
@@ -140,36 +142,36 @@ function App() {
       notificationTime,
     };
 
-    // 반복 일정 생성 (Event 타입으로 변환)
-    const eventForRepeat: Event = {
-      id: editingEvent?.id || 'temp-id',
-      ...eventData,
-    };
-    const repeatEvents = generateRepeatEvents(eventForRepeat);
-
-    // 모든 반복 일정에 대해 겹침 검사
     const overlapping = findOverlappingEvents(eventData, events);
-    if (overlapping.length > 0) {
-      setOverlappingEvents(overlapping);
-      setIsOverlapDialogOpen(true);
-    } else {
-      try {
-        if (editingEvent && editingEvent.repeat.type !== 'none') {
-          // 반복 일정 수정: 기존 일정 삭제 후 새로운 일정 생성
-          await deleteRepeatEvents([editingEvent.id]);
-          await saveRepeatEvents(repeatEvents);
-        } else if (isRepeating) {
-          // 새로운 반복 일정 생성
-          await saveRepeatEvents(repeatEvents);
-        } else {
-          // 단일 일정 생성/수정
-          await saveEvent(eventData as Event);
+    if (isRepeating && repeatType !== 'none') {
+      // 반복 일정이면 generateRepeatEvents로 이벤트 배열 생성
+      const eventForRepeat: Event = {
+        id: editingEvent?.id || 'temp-id',
+        ...eventData,
+      };
+      const repeatEvents = generateRepeatEvents(eventForRepeat);
+
+      // 생성된 모든 이벤트에 대해 겹치는 일정 확인
+      for (const event of repeatEvents) {
+        const overlapping = findOverlappingEvents(event, events);
+        if (overlapping.length > 0) {
+          setOverlappingEvents(overlapping);
+          setIsOverlapDialogOpen(true);
+          return;
         }
+      }
+      // 겹치는 일정이 없으면 한번에 저장
+      await saveRepeatEvents(repeatEvents);
+      resetForm();
+      enqueueSnackbar('반복 일정이 저장되었습니다.', { variant: 'success' });
+    } else {
+      if (overlapping.length > 0) {
+        setOverlappingEvents(overlapping);
+        setIsOverlapDialogOpen(true);
+      } else {
+        await saveEvent(eventData as Event);
         resetForm();
         enqueueSnackbar('일정이 저장되었습니다.', { variant: 'success' });
-      } catch (error) {
-        console.error('Error saving event:', error);
-        enqueueSnackbar('일정 저장 실패', { variant: 'error' });
       }
     }
   };
@@ -477,7 +479,11 @@ function App() {
                 <FormLabel>반복 유형</FormLabel>
                 <Select
                   size="small"
-                  value={repeatType}
+                  value={
+                    ['daily', 'weekly', 'monthly', 'yearly'].includes(repeatType)
+                      ? repeatType
+                      : 'daily'
+                  }
                   onChange={(e) => setRepeatType(e.target.value as RepeatType)}
                 >
                   <MenuItem value="daily">매일</MenuItem>
