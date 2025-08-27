@@ -96,26 +96,7 @@ describe('generateRepeatEvents', () => {
     });
   });
 
-  // 2. (필수) 반복 일정 표시 -> 이 부분은 iconUtils.spec.ts 에서 테스트 해서 생략
-  describe('반복 일정 표시', () => {
-    it('반복 일정은 반복 타입 속성을 가진다', () => {
-      const repeatEvent = {
-        ...baseEvent,
-        repeat: { type: 'daily' as const, interval: 1, endDate: '2025-01-05' },
-      };
-
-      const singleEvent = {
-        ...baseEvent,
-        repeat: { type: 'none' as const, interval: 1 },
-      };
-
-      // 반복 일정은 반복 타입을 가짐
-      expect(repeatEvent.repeat.type).toBe('daily');
-
-      // 단일 일정은 none 타입을 가짐
-      expect(singleEvent.repeat.type).toBe('none');
-    });
-  });
+  // 2. (필수) 반복 일정 표시 -> iconUtils.spec.ts에서 테스트
 
   // 3. (필수) 반복 종료
   describe('반복 종료', () => {
