@@ -163,7 +163,6 @@ function App() {
       // 겹치는 일정이 없으면 한번에 저장
       await saveRepeatEvents(repeatEvents);
       resetForm();
-      enqueueSnackbar('반복 일정이 저장되었습니다.', { variant: 'success' });
     } else {
       if (overlapping.length > 0) {
         setOverlappingEvents(overlapping);
@@ -463,6 +462,7 @@ function App() {
               size="small"
               value={notificationTime}
               onChange={(e) => setNotificationTime(Number(e.target.value))}
+              aria-label="알림 설정"
             >
               {notificationOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -485,6 +485,7 @@ function App() {
                       : 'daily'
                   }
                   onChange={(e) => setRepeatType(e.target.value as RepeatType)}
+                  aria-label="반복 유형"
                 >
                   <MenuItem value="daily">매일</MenuItem>
                   <MenuItem value="weekly">매주</MenuItem>
@@ -494,8 +495,9 @@ function App() {
               </FormControl>
               <Stack direction="row" spacing={2}>
                 <FormControl fullWidth>
-                  <FormLabel>반복 간격</FormLabel>
+                  <FormLabel htmlFor="repeat-interval">반복 간격</FormLabel>
                   <TextField
+                    id="repeat-interval"
                     size="small"
                     type="number"
                     value={repeatInterval}
@@ -504,8 +506,9 @@ function App() {
                   />
                 </FormControl>
                 <FormControl fullWidth>
-                  <FormLabel>반복 종료일</FormLabel>
+                  <FormLabel htmlFor="repeat-end-date">반복 종료일</FormLabel>
                   <TextField
+                    id="repeat-end-date"
                     size="small"
                     type="date"
                     value={repeatEndDate}
