@@ -2,13 +2,11 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { render, screen, within } from '@testing-library/react';
 import { UserEvent, userEvent } from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
 import { ReactElement } from 'react';
 
 import { setupMockHandlerCreation } from '../__mocks__/handlersUtils';
 import App from '../App';
-import { server } from '../setupTests';
 import { Event } from '../types';
 
 const theme = createTheme();
@@ -51,21 +49,8 @@ const saveSchedule = async (
 };
 
 describe('뷰 간 데이터 동기화 통합 테스트', () => {
-  beforeEach(() => {
-    // 기본 이벤트 목록 설정
-    server.use(
-      http.get('/api/events', () => {
-        return HttpResponse.json({ events: [] });
-      })
-    );
-  });
-
-  afterEach(() => {
-    server.resetHandlers();
-  });
-
-  describe('시나리오 1: 뷰 간 데이터 동기화', () => {
-    it('일정을 생성한 후 월간 뷰, 주간 뷰, 일정 리스트에서 해당 일정이 표시되는지 확인합니다', async () => {
+  describe('시나리오 1: 일정을 생성한 후 월간 뷰, 주간 뷰, 일정 리스트에서 해당 일정이 표시되는지 확인합니다', () => {
+    it('일정을 생성한 후 월간 뷰에서 해당 일정이 표시되는지 확인합니다', async () => {
       setupMockHandlerCreation();
       const { user } = setup(<App />);
 
@@ -84,25 +69,53 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       expect(screen.getByText('일정이 추가되었습니다.')).toBeInTheDocument();
 
       // 3. 월간 뷰에서 일정 확인
-      expect(screen.getByTestId('month-view')).toBeInTheDocument();
-      const monthView = screen.getByTestId('month-view');
-      expect(within(monthView).getByText('테스트 일정')).toBeInTheDocument();
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
+      await user.click(screen.getByRole('option', { name: 'month-option' }));
 
-      // 4. 주간 뷰로 전환
-      const viewSelects = screen.getAllByRole('combobox');
-      // 영 이렇게 선택 하는 것이 만족스럽지 못 하다.
-      // const viewSelect = screen.getByLabelText('뷰 타입 선택'); 이런게는 왜 선택이 안되는 것 일까?
-      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
-      await user.click(viewSelect);
-      // combobox가 열린 후 Week 옵션 찾기
+      expect(screen.getByText('테스트 일정 설명')).toBeInTheDocument();
+    });
+
+    it('일정을 생성한 후 주간 뷰에서 해당 일정이 표시되는지 확인합니다', async () => {
+      setupMockHandlerCreation();
+      const { user } = setup(<App />);
+
+      // 1. 일정 생성
+      await saveSchedule(user, {
+        title: '테스트 일정',
+        date: '2025-10-02',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '테스트 일정 설명',
+        location: '테스트 위치',
+        category: '업무',
+      });
+
+      // 2. 주간 뷰로 전환
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
-      // 5. 주간 뷰에서 일정 확인
+      // 3. 주간 뷰에서 일정 확인
       expect(screen.getByTestId('week-view')).toBeInTheDocument();
       const weekView = screen.getByTestId('week-view');
       expect(within(weekView).getByText('테스트 일정')).toBeInTheDocument();
+    });
 
-      // 6. 오른쪽 일정 리스트에서 일정 확인
+    it('일정을 생성한 후 오른쪽 일정 리스트에서 해당 일정이 표시되는지 확인합니다', async () => {
+      setupMockHandlerCreation();
+      const { user } = setup(<App />);
+
+      // 1. 일정 생성
+      await saveSchedule(user, {
+        title: '테스트 일정',
+        date: '2025-10-02',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '테스트 일정 설명',
+        location: '테스트 위치',
+        category: '업무',
+      });
+
+      // 2. 오른쪽 일정 리스트에서 일정 확인
       const eventList = screen.getByTestId('event-list');
       expect(within(eventList).getByText('테스트 일정')).toBeInTheDocument();
     });
@@ -114,10 +127,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       const { user } = setup(<App />);
 
       // 1. 주간 뷰로 전환
-      const viewSelects = screen.getAllByRole('combobox');
-      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
-      await user.click(viewSelect);
-      // combobox가 열린 후 Week 옵션 찾기
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
       // 2. 현재 주에 일정 생성
@@ -156,10 +166,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       const { user } = setup(<App />);
 
       // 1. 주간 뷰로 전환
-      const viewSelects = screen.getAllByRole('combobox');
-      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
-      await user.click(viewSelect);
-      // combobox가 열린 후 Week 옵션 찾기
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
       // 2. 주간 뷰에서 특정 날짜 확인 (2025-10-02)
@@ -170,7 +177,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       expect(within(weekView).getByText('2')).toBeInTheDocument();
 
       // 3. 월간 뷰로 전환
-      await user.click(viewSelect);
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'month-option' }));
 
       // 4. 월간 뷰에서도 동일한 날짜가 표시되는지 확인
@@ -179,7 +186,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       expect(within(monthView).getByText('2')).toBeInTheDocument();
 
       // 5. 다시 주간 뷰로 돌아가기
-      await user.click(viewSelect);
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
       // 6. 주간 뷰에서도 동일한 날짜가 표시되는지 확인
@@ -226,10 +233,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       expect(within(monthView).queryByText('다른 일정')).not.toBeInTheDocument();
 
       // 4. 주간 뷰로 전환
-      const viewSelects = screen.getAllByRole('combobox');
-      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
-      await user.click(viewSelect);
-      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
+      await user.click(within(screen.getByLabelText('뷰 타입 선택')).getByRole('combobox'));
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
       // 5. 주간 뷰에서 검색 결과 확인
