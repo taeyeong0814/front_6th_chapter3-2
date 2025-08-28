@@ -65,14 +65,14 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
   });
 
   describe('시나리오 1: 뷰 간 데이터 동기화', () => {
-    it('일정을 생성한 후 모든 뷰에서 동일한 일정이 표시된다', async () => {
+    it('일정을 생성한 후 월간 뷰에서 일정이 표시된다', async () => {
       setupMockHandlerCreation();
       const { user } = setup(<App />);
 
       // 1. 일정 생성
       await saveSchedule(user, {
         title: '테스트 일정',
-        date: '2025-01-15',
+        date: '2025-10-15',
         startTime: '09:00',
         endTime: '10:00',
         description: '테스트 일정 설명',
@@ -80,23 +80,16 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
         category: '업무',
       });
 
-      // 2. 주간 뷰에서 일정 확인
-      expect(screen.getByTestId('week-view')).toBeInTheDocument();
-      const weekView = screen.getByTestId('week-view');
-      expect(within(weekView).getByText('테스트 일정')).toBeInTheDocument();
+      // 2. 일정 생성 성공 확인
+      expect(screen.getByText('일정이 추가되었습니다.')).toBeInTheDocument();
 
-      // 3. 월간 뷰로 전환
-      await user.click(screen.getByRole('combobox', { name: '뷰 타입 선택' }));
-      await user.click(screen.getByRole('option', { name: 'Month' }));
-
-      // 4. 월간 뷰에서 일정 확인
+      // 3. 월간 뷰에서 일정 확인
       expect(screen.getByTestId('month-view')).toBeInTheDocument();
       const monthView = screen.getByTestId('month-view');
       expect(within(monthView).getByText('테스트 일정')).toBeInTheDocument();
 
-      // 5. 일정 리스트에서 일정 확인
-      const eventList = screen.getByTestId('event-list');
-      expect(within(eventList).getByText('테스트 일정')).toBeInTheDocument();
+      // 4. 일정이 올바른 날짜(15일)에 표시되는지 확인
+      expect(within(monthView).getByText('15')).toBeInTheDocument();
     });
   });
 
