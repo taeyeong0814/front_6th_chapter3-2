@@ -241,8 +241,43 @@ describe('반복 일정 기본 통합 테스트', () => {
 
   describe('시나리오 4: 반복 일정 삭제', () => {
     it('반복 일정을 삭제하면 해당 인스턴스만 삭제된다', async () => {
-      // TODO: 반복 일정 삭제 테스트 구현
-      expect(true).toBe(true);
+      const { user } = setup(<App />);
+
+      // 1. 반복 일정 생성
+      await saveRepeatSchedule(user, {
+        title: '삭제할 반복 일정',
+        date: '2025-10-15',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '삭제 테스트용 반복 일정',
+        location: '테스트 위치',
+        category: '업무',
+        notificationTime: 10,
+        repeat: {
+          type: 'weekly',
+          interval: 1,
+          endDate: '2025-10-22', // 테스트용으로 짧게 설정 (1주일만)
+        },
+      });
+
+      // 2. 성공 메시지 확인
+      expect(screen.getByText(/개의 반복 일정이 추가되었습니다/)).toBeInTheDocument();
+
+      // 3. 일정 목록에서 반복 일정 찾기
+      const eventList = screen.getByTestId('event-list');
+      expect(within(eventList).getByText('삭제할 반복 일정')).toBeInTheDocument();
+
+      // 4. 첫 번째 반복 일정 삭제 버튼 클릭
+      const deleteButtons = within(eventList).getAllByLabelText('Delete event');
+      await user.click(deleteButtons[0]);
+
+      // 5. 삭제 후 해당 일정만 사라졌는지 확인
+      expect(within(eventList).queryByText('삭제할 반복 일정')).not.toBeInTheDocument();
+
+      // 6. 다른 반복 일정 인스턴스는 여전히 존재하는지 확인
+      // (반복 일정이 여러 개 생성되었으므로 일부는 남아있어야 함)
+      const remainingDeleteButtons = within(eventList).getAllByLabelText('Delete event');
+      expect(remainingDeleteButtons.length).toBeGreaterThan(0);
     });
   });
 });
