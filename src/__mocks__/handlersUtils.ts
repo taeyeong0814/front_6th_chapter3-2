@@ -151,6 +151,18 @@ export const setupMockHandlerRepeatDeletion = (initEvents = [] as Event[]) => {
     http.get('/api/events', () => {
       return HttpResponse.json({ events: mockEvents });
     }),
+    // 반복 일정이지만 삭제는 단일로
+    http.delete('/api/events/:id', ({ params }) => {
+      const { id } = params;
+      const index = mockEvents.findIndex((event) => event.id === id);
+
+      if (index !== -1) {
+        mockEvents.splice(index, 1);
+      }
+      return new HttpResponse(null, { status: 204 });
+    }),
+
+    // 반복 일정을 일괄 삭제 하지만 현재는 사용 안함
     http.delete('/api/events-list', async ({ request }) => {
       const { eventIds } = (await request.json()) as { eventIds: string[] };
 

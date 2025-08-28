@@ -40,7 +40,7 @@ import { useEventForm } from './hooks/useEventForm.ts';
 import { useEventOperations } from './hooks/useEventOperations.ts';
 import { useNotifications } from './hooks/useNotifications.ts';
 import { useSearch } from './hooks/useSearch.ts';
-import { Event, EventForm, RepeatType } from './types';
+import { Event, RepeatType } from './types';
 import {
   formatDate,
   formatMonth,
@@ -125,8 +125,8 @@ function App() {
       return;
     }
 
-    const eventData: Event | EventForm = {
-      id: editingEvent ? editingEvent.id : undefined,
+    const eventData: Event = {
+      id: editingEvent ? editingEvent.id : `temp-${Date.now()}`,
       title,
       date,
       startTime,
@@ -135,18 +135,31 @@ function App() {
       location,
       category,
       repeat: {
-        type: isRepeating && repeatType !== 'none' ? repeatType : 'none',
-        interval: repeatInterval,
-        endDate: repeatEndDate || undefined,
+        type: editingEvent ? 'none' : isRepeating && repeatType !== 'none' ? repeatType : 'none',
+        interval: editingEvent ? 0 : repeatInterval,
+        endDate: editingEvent ? undefined : repeatEndDate || undefined,
       },
       notificationTime: notificationTime,
     };
+
+    // 수정 모드에서는 무조건 단일 일정으로 저장
+    if (editingEvent) {
+      const overlapping = findOverlappingEvents(eventData, events);
+      if (overlapping.length > 0) {
+        setOverlappingEvents(overlapping);
+        setIsOverlapDialogOpen(true);
+      } else {
+        await saveEvent(eventData);
+        resetForm();
+      }
+      return;
+    }
 
     const overlapping = findOverlappingEvents(eventData, events);
     if (isRepeating && repeatType !== 'none') {
       // 반복 일정이면 generateRepeatEvents로 이벤트 배열 생성
       const eventForRepeat: Event = {
-        id: editingEvent?.id || 'temp-id',
+        id: `temp-${Date.now()}`,
         title,
         date,
         startTime,
@@ -180,7 +193,7 @@ function App() {
         setOverlappingEvents(overlapping);
         setIsOverlapDialogOpen(true);
       } else {
-        await saveEvent(eventData as Event);
+        await saveEvent(eventData);
         resetForm();
       }
     }
@@ -663,10 +676,27 @@ function App() {
             color="error"
             onClick={async () => {
               setIsOverlapDialogOpen(false);
-              if (isRepeating && repeatType !== 'none') {
-                // 반복 일정이면 generateRepeatEvents로 이벤트 배열 생성
+              if (editingEvent) {
+                // 수정 모드에서는 무조건 단일 일정으로 저장
+                await saveEvent({
+                  id: editingEvent.id,
+                  title,
+                  date,
+                  startTime,
+                  endTime,
+                  description,
+                  location,
+                  category,
+                  repeat: {
+                    type: 'none',
+                    interval: 0,
+                  },
+                  notificationTime,
+                });
+              } else if (isRepeating && repeatType !== 'none') {
+                // 새 반복 일정 생성
                 const eventForRepeat: Event = {
-                  id: editingEvent?.id || 'temp-id',
+                  id: `temp-${Date.now()}`,
                   title,
                   date,
                   startTime,
@@ -684,9 +714,9 @@ function App() {
                 const repeatEvents = generateRepeatEvents(eventForRepeat);
                 await saveRepeatEvents(repeatEvents);
               } else {
-                // 단일 일정이면 일반 저장
+                // 새 단일 일정 생성
                 await saveEvent({
-                  id: editingEvent ? editingEvent.id : undefined,
+                  id: `temp-${Date.now()}`,
                   title,
                   date,
                   startTime,
