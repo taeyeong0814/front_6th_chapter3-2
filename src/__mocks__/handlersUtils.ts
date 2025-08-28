@@ -92,3 +92,75 @@ export const setupMockHandlerDeletion = () => {
     })
   );
 };
+
+export const setupMockHandlerRepeatCreation = (initEvents = [] as Event[]) => {
+  const mockEvents: Event[] = [...initEvents];
+
+  server.use(
+    http.get('/api/events', () => {
+      return HttpResponse.json({ events: mockEvents });
+    }),
+    http.post('/api/events-list', async ({ request }) => {
+      const { events: newEvents } = (await request.json()) as { events: Event[] };
+      const repeatId = String(Date.now());
+
+      const processedEvents = newEvents.map((event, index) => {
+        const isRepeatEvent = event.repeat.type !== 'none';
+        return {
+          ...event,
+          id: String(mockEvents.length + index + 1),
+          repeat: {
+            ...event.repeat,
+            id: isRepeatEvent ? repeatId : undefined,
+          },
+        };
+      });
+
+      mockEvents.push(...processedEvents);
+      return HttpResponse.json(processedEvents, { status: 201 });
+    })
+  );
+};
+
+export const setupMockHandlerRepeatUpdating = (initEvents = [] as Event[]) => {
+  const mockEvents: Event[] = [...initEvents];
+
+  server.use(
+    http.get('/api/events', () => {
+      return HttpResponse.json({ events: mockEvents });
+    }),
+    http.put('/api/events-list', async ({ request }) => {
+      const { events: updatedEvents } = (await request.json()) as { events: Event[] };
+
+      updatedEvents.forEach((updatedEvent) => {
+        const index = mockEvents.findIndex((event) => event.id === updatedEvent.id);
+        if (index !== -1) {
+          mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
+        }
+      });
+
+      return HttpResponse.json(updatedEvents);
+    })
+  );
+};
+
+export const setupMockHandlerRepeatDeletion = (initEvents = [] as Event[]) => {
+  const mockEvents: Event[] = [...initEvents];
+
+  server.use(
+    http.get('/api/events', () => {
+      return HttpResponse.json({ events: mockEvents });
+    }),
+    http.delete('/api/events-list', async ({ request }) => {
+      const { eventIds } = (await request.json()) as { eventIds: string[] };
+
+      for (let i = mockEvents.length - 1; i >= 0; i--) {
+        if (eventIds.includes(mockEvents[i].id)) {
+          mockEvents.splice(i, 1);
+        }
+      }
+
+      return new HttpResponse(null, { status: 204 });
+    })
+  );
+};
