@@ -19,6 +19,11 @@ export default mergeConfig(
       globals: true,
       environment: 'jsdom',
       setupFiles: './src/setupTests.ts',
+      exclude: [
+        '**/node_modules/**',
+        '**/e2e/**', // E2E 테스트 폴더 제외
+        '**/*.e2e.spec.ts', // E2E 테스트 파일 패턴 제외
+      ],
       coverage: {
         reportsDirectory: './.coverage',
         reporter: ['lcov', 'json', 'json-summary'],
