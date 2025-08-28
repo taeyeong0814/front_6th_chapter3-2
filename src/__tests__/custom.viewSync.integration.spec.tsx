@@ -156,30 +156,38 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
     it('주간 뷰에서 특정 날짜를 확인하고 월간 뷰로 전환해도 동일한 날짜가 표시된다', async () => {
       const { user } = setup(<App />);
 
-      // 1. 주간 뷰에서 특정 날짜 확인 (2025-01-15)
+      // 1. 주간 뷰로 전환
+      const viewSelects = screen.getAllByRole('combobox');
+      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
+      await user.click(viewSelect);
+      // combobox가 열린 후 Week 옵션 찾기
+      await user.click(screen.getByRole('option', { name: 'week-option' }));
+
+      // 2. 주간 뷰에서 특정 날짜 확인 (2025-10-02)
       expect(screen.getByTestId('week-view')).toBeInTheDocument();
 
-      // 주간 뷰에서 2025-01-15 날짜가 표시되는지 확인
+      // 주간 뷰에서 2025-10-02 날짜가 표시되는지 확인
       const weekView = screen.getByTestId('week-view');
-      expect(within(weekView).getByText('15')).toBeInTheDocument();
+      expect(within(weekView).getByText('2')).toBeInTheDocument();
 
-      // 2. 월간 뷰로 전환
-      await user.click(screen.getByRole('combobox', { name: '뷰 타입 선택' }));
-      await user.click(screen.getByRole('option', { name: 'Month' }));
+      // 3. 월간 뷰로 전환
+      await user.click(viewSelect);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
+      await user.click(screen.getByRole('option', { name: 'month-option' }));
 
-      // 3. 월간 뷰에서도 동일한 날짜가 표시되는지 확인
+      // 4. 월간 뷰에서도 동일한 날짜가 표시되는지 확인
       expect(screen.getByTestId('month-view')).toBeInTheDocument();
       const monthView = screen.getByTestId('month-view');
-      expect(within(monthView).getByText('15')).toBeInTheDocument();
+      expect(within(monthView).getByText('2')).toBeInTheDocument();
 
-      // 4. 다시 주간 뷰로 돌아가기
-      await user.click(screen.getByRole('combobox', { name: '뷰 타입 선택' }));
-      await user.click(screen.getByRole('option', { name: 'Week' }));
+      // 5. 다시 주간 뷰로 돌아가기
+      await user.click(viewSelect);
+      await user.click(screen.getByRole('option', { name: 'week-option' }));
 
-      // 5. 주간 뷰에서도 동일한 날짜가 표시되는지 확인
+      // 6. 주간 뷰에서도 동일한 날짜가 표시되는지 확인
       expect(screen.getByTestId('week-view')).toBeInTheDocument();
       const weekViewAgain = screen.getByTestId('week-view');
-      expect(within(weekViewAgain).getByText('15')).toBeInTheDocument();
+      expect(within(weekViewAgain).getByText('2')).toBeInTheDocument();
     });
   });
 
