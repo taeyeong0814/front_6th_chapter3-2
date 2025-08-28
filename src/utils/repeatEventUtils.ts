@@ -99,6 +99,7 @@ export function generateRepeatEvents(baseEvent: Event): Event[] {
 
     events.push({
       ...baseEvent,
+      id: `${baseEvent.id}-${occurrenceCount}`,
       date: nextDate.toISOString().split('T')[0],
     });
 

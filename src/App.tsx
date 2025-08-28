@@ -135,11 +135,11 @@ function App() {
       location,
       category,
       repeat: {
-        type: isRepeating ? repeatType : 'none',
+        type: isRepeating && repeatType !== 'none' ? repeatType : 'none',
         interval: repeatInterval,
         endDate: repeatEndDate || undefined,
       },
-      notificationTime,
+      notificationTime: notificationTime,
     };
 
     const overlapping = findOverlappingEvents(eventData, events);
@@ -147,7 +147,19 @@ function App() {
       // 반복 일정이면 generateRepeatEvents로 이벤트 배열 생성
       const eventForRepeat: Event = {
         id: editingEvent?.id || 'temp-id',
-        ...eventData,
+        title,
+        date,
+        startTime,
+        endTime,
+        description,
+        location,
+        category,
+        repeat: {
+          type: repeatType,
+          interval: repeatInterval,
+          endDate: repeatEndDate || undefined,
+        },
+        notificationTime, // 기본 알림 시간
       };
       const repeatEvents = generateRepeatEvents(eventForRepeat);
 
@@ -170,7 +182,6 @@ function App() {
       } else {
         await saveEvent(eventData as Event);
         resetForm();
-        enqueueSnackbar('일정이 저장되었습니다.', { variant: 'success' });
       }
     }
   };
@@ -650,24 +661,47 @@ function App() {
           <Button onClick={() => setIsOverlapDialogOpen(false)}>취소</Button>
           <Button
             color="error"
-            onClick={() => {
+            onClick={async () => {
               setIsOverlapDialogOpen(false);
-              saveEvent({
-                id: editingEvent ? editingEvent.id : undefined,
-                title,
-                date,
-                startTime,
-                endTime,
-                description,
-                location,
-                category,
-                repeat: {
-                  type: isRepeating ? repeatType : 'none',
-                  interval: repeatInterval,
-                  endDate: repeatEndDate || undefined,
-                },
-                notificationTime,
-              });
+              if (isRepeating && repeatType !== 'none') {
+                // 반복 일정이면 generateRepeatEvents로 이벤트 배열 생성
+                const eventForRepeat: Event = {
+                  id: editingEvent?.id || 'temp-id',
+                  title,
+                  date,
+                  startTime,
+                  endTime,
+                  description,
+                  location,
+                  category,
+                  repeat: {
+                    type: repeatType,
+                    interval: repeatInterval,
+                    endDate: repeatEndDate || undefined,
+                  },
+                  notificationTime,
+                };
+                const repeatEvents = generateRepeatEvents(eventForRepeat);
+                await saveRepeatEvents(repeatEvents);
+              } else {
+                // 단일 일정이면 일반 저장
+                await saveEvent({
+                  id: editingEvent ? editingEvent.id : undefined,
+                  title,
+                  date,
+                  startTime,
+                  endTime,
+                  description,
+                  location,
+                  category,
+                  repeat: {
+                    type: 'none',
+                    interval: 0,
+                  },
+                  notificationTime,
+                });
+              }
+              resetForm();
             }}
           >
             계속 진행
