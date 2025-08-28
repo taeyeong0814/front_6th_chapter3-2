@@ -65,14 +65,14 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
   });
 
   describe('시나리오 1: 뷰 간 데이터 동기화', () => {
-    it('일정을 생성한 후 월간 뷰에서 일정이 표시된다', async () => {
+    it('일정을 생성한 후 월간 뷰, 주간 뷰, 일정 리스트에서 해당 일정이 표시되는지 확인합니다', async () => {
       setupMockHandlerCreation();
       const { user } = setup(<App />);
 
       // 1. 일정 생성
       await saveSchedule(user, {
         title: '테스트 일정',
-        date: '2025-10-15',
+        date: '2025-10-02',
         startTime: '09:00',
         endTime: '10:00',
         description: '테스트 일정 설명',
@@ -88,8 +88,23 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       const monthView = screen.getByTestId('month-view');
       expect(within(monthView).getByText('테스트 일정')).toBeInTheDocument();
 
-      // 4. 일정이 올바른 날짜(15일)에 표시되는지 확인
-      expect(within(monthView).getByText('15')).toBeInTheDocument();
+      // 4. 주간 뷰로 전환
+      const viewSelects = screen.getAllByRole('combobox');
+      // 영 이렇게 선택 하는 것이 만족스럽지 못 하다.
+      // const viewSelect = screen.getByLabelText('뷰 타입 선택'); 이런게는 왜 선택이 안되는 것 일까?
+      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
+      await user.click(viewSelect);
+      // combobox가 열린 후 Week 옵션 찾기
+      await user.click(screen.getByRole('option', { name: 'week-option' }));
+
+      // 5. 주간 뷰에서 일정 확인
+      expect(screen.getByTestId('week-view')).toBeInTheDocument();
+      const weekView = screen.getByTestId('week-view');
+      expect(within(weekView).getByText('테스트 일정')).toBeInTheDocument();
+
+      // 6. 오른쪽 일정 리스트에서 일정 확인
+      const eventList = screen.getByTestId('event-list');
+      expect(within(eventList).getByText('테스트 일정')).toBeInTheDocument();
     });
   });
 
@@ -98,10 +113,18 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       setupMockHandlerCreation();
       const { user } = setup(<App />);
 
-      // 1. 현재 주에 일정 생성
+      // 1. 주간 뷰로 전환
+      const viewSelects = screen.getAllByRole('combobox');
+      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
+      await user.click(viewSelect);
+      // combobox가 열린 후 Week 옵션 찾기
+      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
+      await user.click(screen.getByRole('option', { name: 'week-option' }));
+
+      // 2. 현재 주에 일정 생성
       await saveSchedule(user, {
         title: '현재 주 일정',
-        date: '2025-01-15',
+        date: '2025-10-02', // 10월 1주차로 수정
         startTime: '09:00',
         endTime: '10:00',
         description: '현재 주 일정 설명',
@@ -109,20 +132,23 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
         category: '업무',
       });
 
-      // 2. 현재 주에서 일정 확인
-      expect(screen.getByText('현재 주 일정')).toBeInTheDocument();
+      // 3. 현재 주에서 일정 확인
+      expect(screen.getByText('일정이 추가되었습니다.')).toBeInTheDocument();
+      const weekView = screen.getByTestId('week-view');
+      expect(within(weekView).getByText('현재 주 일정')).toBeInTheDocument();
 
-      // 3. 다음 주로 이동
+      // 4. 다음 주로 이동
       await user.click(screen.getByLabelText('Next'));
 
-      // 4. 다음 주에서는 일정이 표시되지 않는지 확인
+      // 5. 다음 주에서는 일정이 표시되지 않는지 확인
       expect(screen.queryByText('현재 주 일정')).not.toBeInTheDocument();
 
-      // 5. 이전 주로 돌아가기
+      // 6. 이전 주로 돌아가기
       await user.click(screen.getByLabelText('Previous'));
 
-      // 6. 이전 주에서 일정이 다시 표시되는지 확인
-      expect(screen.getByText('현재 주 일정')).toBeInTheDocument();
+      // 7. 이전 주에서 일정이 다시 표시되는지 확인
+      const weekViewAgain = screen.getByTestId('week-view');
+      expect(within(weekViewAgain).getByText('현재 주 일정')).toBeInTheDocument();
     });
   });
 
