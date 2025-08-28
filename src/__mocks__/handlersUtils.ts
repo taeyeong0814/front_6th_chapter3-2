@@ -129,6 +129,20 @@ export const setupMockHandlerRepeatUpdating = (initEvents = [] as Event[]) => {
     http.get('/api/events', () => {
       return HttpResponse.json({ events: mockEvents });
     }),
+    // 반복 일정이지만 수정은 단일로
+    http.put('/api/events/:id', async ({ params, request }) => {
+      const { id } = params;
+      const updatedEvent = (await request.json()) as Event;
+      const index = mockEvents.findIndex((event) => event.id === id);
+
+      if (index !== -1) {
+        mockEvents[index] = { ...mockEvents[index], ...updatedEvent };
+        return HttpResponse.json(mockEvents[index]);
+      }
+      return new HttpResponse(null, { status: 404 });
+    }),
+
+    // 반복 일정을 일괄 수정 하지만 현재는 사용 안함
     http.put('/api/events-list', async ({ request }) => {
       const { events: updatedEvents } = (await request.json()) as { events: Event[] };
 
