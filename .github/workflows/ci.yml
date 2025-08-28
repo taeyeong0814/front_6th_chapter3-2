@@ -42,11 +42,32 @@ jobs:
         with:
           node-version: 22
           cache: 'pnpm'
-      - name: Install dependencies and run tests
-        run: |
-          pnpm install
-          pnpm run test
-          npx playwright install --with-deps
-          pnpm run test:e2e
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run unit and integration tests
+        run: pnpm run test
+        env:
+          CI: true
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+      - name: Run E2E tests
+        run: pnpm run test:e2e
         env:
           CI: true
