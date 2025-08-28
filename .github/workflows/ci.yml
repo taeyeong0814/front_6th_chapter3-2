@@ -42,7 +42,13 @@ jobs:
         with:
           node-version: 20
           cache: 'pnpm'
-      - name: test basic
-        run: |
-          pnpm install
-          pnpm run test
+      - name: Install dependencies
+        run: pnpm install
+      - name: Run unit and integration tests
+        run: pnpm run test
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Run E2E tests
+        run: pnpm run test:e2e
+        env:
+          CI: true
