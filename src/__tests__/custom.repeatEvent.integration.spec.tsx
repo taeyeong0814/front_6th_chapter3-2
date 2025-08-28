@@ -137,7 +137,7 @@ describe('반복 일정 기본 통합 테스트', () => {
         repeat: {
           type: 'weekly',
           interval: 1,
-          endDate: '2025-10-30',
+          endDate: '2025-10-22', // 테스트용으로 짧게 설정
         },
       });
 
@@ -163,7 +163,7 @@ describe('반복 일정 기본 통합 테스트', () => {
         repeat: {
           type: 'weekly',
           interval: 1,
-          endDate: '2025-10-30',
+          endDate: '2025-10-22', // 테스트용으로 짧게 설정
         },
       });
 
@@ -188,9 +188,52 @@ describe('반복 일정 기본 통합 테스트', () => {
   });
 
   describe('시나리오 3: 반복 일정 수정', () => {
-    it('반복 일정을 수정하면 단일 일정으로 변경된다', async () => {
-      // TODO: 반복 일정 수정 테스트 구현
-      expect(true).toBe(true);
+    it('반복 일정을 수정할 수 있다', async () => {
+      const { user } = setup(<App />);
+
+      // 1. 반복 일정 생성
+      await saveRepeatSchedule(user, {
+        title: '수정할 반복 일정',
+        date: '2025-10-15',
+        startTime: '09:00',
+        endTime: '10:00',
+        description: '수정 전 설명',
+        location: '수정 전 위치',
+        category: '업무',
+        notificationTime: 10,
+        repeat: {
+          type: 'weekly',
+          interval: 1,
+          endDate: '2025-10-22', // 테스트용으로 짧게 설정 (1주일만)
+        },
+      });
+
+      // 2. 성공 메시지 확인
+      expect(screen.getByText(/개의 반복 일정이 추가되었습니다/)).toBeInTheDocument();
+
+      // 3. 일정 목록에서 반복 일정 찾기
+      const eventList = screen.getByTestId('event-list');
+      expect(within(eventList).getByText('수정할 반복 일정')).toBeInTheDocument();
+
+      // 4. 반복 일정 수정 버튼 클릭
+      const editButton = within(eventList).getByLabelText('Edit event');
+      await user.click(editButton);
+
+      // 5. 수정 폼에서 반복 일정 체크박스 해제
+      const repeatCheckbox = screen.getByLabelText('반복 일정');
+      await user.click(repeatCheckbox);
+
+      // 6. 일정 정보 수정
+      await user.clear(screen.getByLabelText('제목'));
+      await user.type(screen.getByLabelText('제목'), '수정된 단일 일정');
+      await user.clear(screen.getByLabelText('설명'));
+      await user.type(screen.getByLabelText('설명'), '수정된 설명');
+
+      // 7. 수정된 일정 저장
+      await user.click(screen.getByTestId('event-submit-button'));
+
+      // 8. 수정 성공 메시지 확인
+      expect(screen.getByText('일정이 수정되었습니다.')).toBeInTheDocument();
     });
   });
 
