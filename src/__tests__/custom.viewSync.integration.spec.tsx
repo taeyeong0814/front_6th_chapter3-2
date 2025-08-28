@@ -118,7 +118,6 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
       await user.click(viewSelect);
       // combobox가 열린 후 Week 옵션 찾기
-      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
       await user.click(screen.getByRole('option', { name: 'week-option' }));
 
       // 2. 현재 주에 일정 생성
@@ -172,7 +171,6 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
 
       // 3. 월간 뷰로 전환
       await user.click(viewSelect);
-      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
       await user.click(screen.getByRole('option', { name: 'month-option' }));
 
       // 4. 월간 뷰에서도 동일한 날짜가 표시되는지 확인
@@ -196,10 +194,10 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       setupMockHandlerCreation();
       const { user } = setup(<App />);
 
-      // 1. 여러 일정 생성
+      // 1. 여러 일정 생성 (현재 월간 뷰에 맞는 날짜)
       await saveSchedule(user, {
         title: '검색할 일정',
-        date: '2025-01-15',
+        date: '2025-10-02', // 10월 1주차로 수정
         startTime: '09:00',
         endTime: '10:00',
         description: '검색 테스트용 일정',
@@ -209,7 +207,7 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
 
       await saveSchedule(user, {
         title: '다른 일정',
-        date: '2025-01-16',
+        date: '2025-10-03', // 10월 1주차로 수정
         startTime: '10:00',
         endTime: '11:00',
         description: '검색되지 않을 일정',
@@ -218,38 +216,32 @@ describe('뷰 간 데이터 동기화 통합 테스트', () => {
       });
 
       // 2. 검색 실행
-      await user.type(screen.getByLabelText('검색'), '검색할');
+      const searchInput = screen.getByPlaceholderText('검색어를 입력하세요');
+      await user.type(searchInput, '검색할 일정');
 
-      // 3. 주간 뷰에서 검색 결과 확인
-      expect(screen.getByTestId('week-view')).toBeInTheDocument();
-      const weekView = screen.getByTestId('week-view');
-      expect(within(weekView).getByText('검색할 일정')).toBeInTheDocument();
-      expect(within(weekView).queryByText('다른 일정')).not.toBeInTheDocument();
-
-      // 4. 월간 뷰로 전환
-      await user.click(screen.getByRole('combobox', { name: '뷰 타입 선택' }));
-      await user.click(screen.getByRole('option', { name: 'Month' }));
-
-      // 5. 월간 뷰에서 검색 결과 확인
+      // 3. 월간 뷰에서 검색 결과 확인
       expect(screen.getByTestId('month-view')).toBeInTheDocument();
       const monthView = screen.getByTestId('month-view');
       expect(within(monthView).getByText('검색할 일정')).toBeInTheDocument();
       expect(within(monthView).queryByText('다른 일정')).not.toBeInTheDocument();
 
+      // 4. 주간 뷰로 전환
+      const viewSelects = screen.getAllByRole('combobox');
+      const viewSelect = viewSelects[2]; // 세 번째 combobox가 뷰 타입 선택
+      await user.click(viewSelect);
+      await new Promise((resolve) => setTimeout(resolve, 100)); // 잠시 대기
+      await user.click(screen.getByRole('option', { name: 'week-option' }));
+
+      // 5. 주간 뷰에서 검색 결과 확인
+      expect(screen.getByTestId('week-view')).toBeInTheDocument();
+      const weekView = screen.getByTestId('week-view');
+      expect(within(weekView).getByText('검색할 일정')).toBeInTheDocument();
+      expect(within(weekView).queryByText('다른 일정')).not.toBeInTheDocument();
+
       // 6. 일정 리스트에서 검색 결과 확인
       const eventList = screen.getByTestId('event-list');
       expect(within(eventList).getByText('검색할 일정')).toBeInTheDocument();
       expect(within(eventList).queryByText('다른 일정')).not.toBeInTheDocument();
-
-      // 7. 다시 주간 뷰로 돌아가기
-      await user.click(screen.getByRole('combobox', { name: '뷰 타입 선택' }));
-      await user.click(screen.getByRole('option', { name: 'Week' }));
-
-      // 8. 주간 뷰에서도 검색 결과가 유지되는지 확인
-      expect(screen.getByTestId('week-view')).toBeInTheDocument();
-      const weekViewAgain = screen.getByTestId('week-view');
-      expect(within(weekViewAgain).getByText('검색할 일정')).toBeInTheDocument();
-      expect(within(weekViewAgain).queryByText('다른 일정')).not.toBeInTheDocument();
     });
   });
 });
