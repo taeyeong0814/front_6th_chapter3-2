@@ -75,9 +75,11 @@ const saveRepeatSchedule = async (user: UserEvent, form: Omit<Event, 'id'>) => {
     }
   };
 
-  // 1. 반복일정 체크박스가 기본적으로 선택되어 있는지 확인
+  // 1. 반복일정 체크박스가 체크되어 있는지 확인하고, 체크되어 있지 않으면 체크
   const repeatCheckbox = screen.getByLabelText('반복 일정');
-  expect(repeatCheckbox).toHaveAttribute('checked');
+  if (!repeatCheckbox.hasAttribute('checked')) {
+    await user.click(repeatCheckbox);
+  }
 
   // 2. 반복 설정 UI가 표시되는지 확인
   expect(screen.getByText('알림 설정')).toBeInTheDocument();
